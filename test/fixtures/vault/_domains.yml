@@ -1,0 +1,4 @@
+bike:      "Material: Rad, Komponenten, Ausrüstung, Wartung"
+training:  "Körper: Planung, Ernährung, Recovery, Metriken"
+projects:  "Software-Projekte. Ein Unterordner pro Projekt, Hauptnote = Projektname"
+phantom:   "Key ohne zugehörigen Ordner, zum Testen der Warnung"
