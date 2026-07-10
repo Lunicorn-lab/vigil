@@ -25,7 +25,7 @@ defmodule Vigil.MixProject do
       {:bandit, "~> 1.5"},
       {:jason, "~> 1.4"},
       {:yaml_elixir, "~> 2.9"},
-      {:tzdata, "~> 1.1"},
+      {:tz, "~> 0.28"},
       {:plug, "~> 1.16"}
     ]
   end
