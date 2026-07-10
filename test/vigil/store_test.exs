@@ -35,7 +35,9 @@ defmodule Vigil.StoreTest do
     end
 
     test "journal is hidden unless domain explicitly requested" do
-      assert Store.search(%{query: "terra speed"}) |> Enum.all?(&(not String.starts_with?(&1.id, "journal/")))
+      assert Store.search(%{query: "terra speed"})
+             |> Enum.all?(&(not String.starts_with?(&1.id, "journal/")))
+
       results = Store.search(%{query: "terra speed", domain: "journal"})
       assert Enum.any?(results, &String.starts_with?(&1.id, "journal/"))
     end
@@ -91,7 +93,11 @@ defmodule Vigil.StoreTest do
 
     test "fails if file already exists" do
       assert {:error, msg} =
-               Store.create(%{path: "bike/terra-speed.md", type: "reference", content: "# X\ntext"})
+               Store.create(%{
+                 path: "bike/terra-speed.md",
+                 type: "reference",
+                 content: "# X\ntext"
+               })
 
       assert msg =~ "existiert bereits"
     end
@@ -124,7 +130,11 @@ defmodule Vigil.StoreTest do
 
     test "duplicate detection blocks similarly-titled note in same domain, force bypasses it" do
       assert {:error, msg} =
-               Store.create(%{path: "bike/terra-speed-tubeless.md", type: "reference", content: "# Terra Speed Tubeless\ntext"})
+               Store.create(%{
+                 path: "bike/terra-speed-tubeless.md",
+                 type: "reference",
+                 content: "# Terra Speed Tubeless\ntext"
+               })
 
       assert msg =~ "Duplikate"
 
@@ -138,7 +148,9 @@ defmodule Vigil.StoreTest do
     end
 
     test "unknown domain is rejected with a domain list" do
-      assert {:error, msg} = Store.create(%{path: "unbekannt/x.md", type: "reference", content: "# X\nx"})
+      assert {:error, msg} =
+               Store.create(%{path: "unbekannt/x.md", type: "reference", content: "# X\nx"})
+
       assert msg =~ "bike"
     end
 
@@ -150,7 +162,11 @@ defmodule Vigil.StoreTest do
                Store.create(%{path: "projects/neu/x.md", type: "reference", content: "# X\nx"})
 
       assert {:error, _} =
-               Store.create(%{path: "projects/vigil/docs/x.md", type: "reference", content: "# X\nx"})
+               Store.create(%{
+                 path: "projects/vigil/docs/x.md",
+                 type: "reference",
+                 content: "# X\nx"
+               })
 
       assert {:error, _} =
                Store.create(%{path: "gear/unter/x.md", type: "reference", content: "# X\nx"})
@@ -164,9 +180,15 @@ defmodule Vigil.StoreTest do
   end
 
   describe "append" do
-    test "appends under an existing heading, at the end of that section, not at EOF", %{vault: vault} do
+    test "appends under an existing heading, at the end of that section, not at EOF", %{
+      vault: vault
+    } do
       assert {:ok, _} =
-               Store.append(%{path: "bike/via-carolina.md", heading: "Gear", content: "Zusatz: Flickzeug."})
+               Store.append(%{
+                 path: "bike/via-carolina.md",
+                 heading: "Gear",
+                 content: "Zusatz: Flickzeug."
+               })
 
       raw = File.read!(Path.join(vault, "bike/via-carolina.md"))
       assert raw =~ "Rahmentasche, keine Satteltasche.\nZusatz: Flickzeug."
@@ -174,7 +196,11 @@ defmodule Vigil.StoreTest do
 
     test "appends a new section when the heading does not exist yet" do
       assert {:ok, _} =
-               Store.append(%{path: "bike/via-carolina.md", heading: "Wetter", content: "Trocken erwartet."})
+               Store.append(%{
+                 path: "bike/via-carolina.md",
+                 heading: "Wetter",
+                 content: "Trocken erwartet."
+               })
 
       {:ok, result} = Store.read("bike/via-carolina.md#wetter", false)
       assert result.body =~ "Trocken erwartet."
@@ -243,14 +269,20 @@ defmodule Vigil.StoreTest do
 
       now = ~U[2026-07-10 08:00:00Z] |> DateTime.shift_zone!("Europe/Berlin")
       result = Store.current(now)
-      refute Enum.any?(result.active ++ result.upcoming ++ result.recently_past, &(&1.id == "bike/kaputt.md"))
+
+      refute Enum.any?(
+               result.active ++ result.upcoming ++ result.recently_past,
+               &(&1.id == "bike/kaputt.md")
+             )
     end
   end
 
   describe "path security" do
     test "path traversal and absolute paths are rejected without touching disk" do
       for bad_path <- ["../../etc/passwd", "/etc/passwd", "bike/../../x.md"] do
-        assert {:error, msg} = Store.create(%{path: bad_path, type: "reference", content: "# X\nx"})
+        assert {:error, msg} =
+                 Store.create(%{path: bad_path, type: "reference", content: "# X\nx"})
+
         assert msg == "Ungültiger Pfad"
       end
     end
@@ -284,7 +316,10 @@ defmodule Vigil.StoreTest do
       assert {:error, _} = Store.skill_write("kaputt", "---\nname: kaputt\n---\n# x")
 
       assert {:ok, %{name: "neu"}} =
-               Store.skill_write("neu", "---\nname: neu\ndescription: test skill\n---\n# Neu\n1. eins")
+               Store.skill_write(
+                 "neu",
+                 "---\nname: neu\ndescription: test skill\n---\n# Neu\n1. eins"
+               )
 
       {:ok, %{content: content}} = Store.skill_read("neu")
       assert content =~ "1. eins"

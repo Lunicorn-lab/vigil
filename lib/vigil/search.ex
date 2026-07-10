@@ -88,8 +88,11 @@ defmodule Vigil.Search do
     truncated = String.slice(text, 0, limit)
 
     case :binary.matches(truncated, " ") do
-      [] -> truncated
-      matches -> {pos, _len} = List.last(matches)
+      [] ->
+        truncated
+
+      matches ->
+        {pos, _len} = List.last(matches)
         String.slice(truncated, 0, pos)
     end
   end

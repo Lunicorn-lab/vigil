@@ -17,7 +17,11 @@ defmodule Vigil.MCP.Tools do
             query: %{type: "string", description: "Exakte Suchphrase."},
             domain: %{type: "string", description: "Domäne, auf die gefiltert wird."},
             type: %{type: "string", enum: @type_enum, description: "Filtert nach Chunk-Typ."},
-            prefer: %{type: "string", enum: @type_enum, description: "Bevorzugt einen Typ im Ranking."},
+            prefer: %{
+              type: "string",
+              enum: @type_enum,
+              description: "Bevorzugt einen Typ im Ranking."
+            },
             limit: %{type: "integer", description: "Maximale Trefferzahl (Default 10, Max 25)."}
           },
           required: ["query"]
@@ -107,7 +111,10 @@ defmodule Vigil.MCP.Tools do
           type: "object",
           properties: %{
             name: %{type: "string", description: "Skill-Name, mit oder ohne .md."},
-            content: %{type: "string", description: "Vollständiger Dateiinhalt inkl. Frontmatter."}
+            content: %{
+              type: "string",
+              description: "Vollständiger Dateiinhalt inkl. Frontmatter."
+            }
           },
           required: ["name", "content"]
         }

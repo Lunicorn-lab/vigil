@@ -19,7 +19,10 @@ defmodule Vigil.Store do
   def read(id, backlinks?), do: GenServer.call(__MODULE__, {:read, id, backlinks?})
   def create(params), do: GenServer.call(__MODULE__, {:create, params})
   def append(params), do: GenServer.call(__MODULE__, {:append, params})
-  def replace_section(id, content), do: GenServer.call(__MODULE__, {:replace_section, id, content})
+
+  def replace_section(id, content),
+    do: GenServer.call(__MODULE__, {:replace_section, id, content})
+
   def current(now \\ nil), do: GenServer.call(__MODULE__, {:current, now})
   def active_event_ids(now), do: GenServer.call(__MODULE__, {:active_event_ids, now})
   def file_title(path), do: GenServer.call(__MODULE__, {:file_title, path})
@@ -268,7 +271,9 @@ defmodule Vigil.Store do
 
     if File.exists?(path) do
       case YamlElixir.read_from_file(path) do
-        {:ok, map} when is_map(map) -> map
+        {:ok, map} when is_map(map) ->
+          map
+
         {:error, reason} ->
           Logger.warning("_domains.yml unparsbar: #{inspect(reason)}")
           %{}
@@ -374,7 +379,9 @@ defmodule Vigil.Store do
         [] -> []
       end)
       |> Enum.filter(& &1.heading)
-      |> Enum.map(fn rec -> %{id: rec.id, heading: rec.heading, heading_path: rec.heading_path} end)
+      |> Enum.map(fn rec ->
+        %{id: rec.id, heading: rec.heading, heading_path: rec.heading_path}
+      end)
 
     base = %{
       path: file.path,
@@ -501,7 +508,13 @@ defmodule Vigil.Store do
       frontmatter = build_frontmatter(type_atom, starts_dt, ends_dt)
       full_content = normalize_trailing_newline(frontmatter <> content)
 
-      write_and_commit(state, path, abs_path, full_content, "create: #{path} — #{first_line(content)}")
+      write_and_commit(
+        state,
+        path,
+        abs_path,
+        full_content,
+        "create: #{path} — #{first_line(content)}"
+      )
     else
       {:error, msg} -> {:error, msg}
     end
@@ -630,7 +643,13 @@ defmodule Vigil.Store do
       new_lines = insert_append(path, orig_lines, heading, content)
       new_content = Enum.join(new_lines, "\n") <> "\n"
 
-      write_and_commit(state, path, abs_path, new_content, "append: #{path} — #{first_line(content)}")
+      write_and_commit(
+        state,
+        path,
+        abs_path,
+        new_content,
+        "append: #{path} — #{first_line(content)}"
+      )
     else
       {:error, msg} -> {:error, msg}
     end
@@ -689,7 +708,10 @@ defmodule Vigil.Store do
           orig_lines = split_lines(original)
 
           prefix = Enum.slice(orig_lines, 0, rec.heading_line)
-          suffix = Enum.slice(orig_lines, rec.body_end_line, length(orig_lines) - rec.body_end_line)
+
+          suffix =
+            Enum.slice(orig_lines, rec.body_end_line, length(orig_lines) - rec.body_end_line)
+
           new_lines = prefix ++ split_lines(content) ++ suffix
           new_content = Enum.join(new_lines, "\n") <> "\n"
 
@@ -733,8 +755,7 @@ defmodule Vigil.Store do
             {:ok, %{path: rel_path}}
 
           {:error, out} ->
-            {:error,
-             "Änderung lokal gespeichert und committed, aber Push fehlgeschlagen: #{out}"}
+            {:error, "Änderung lokal gespeichert und committed, aber Push fehlgeschlagen: #{out}"}
         end
 
       {:error, out} ->
@@ -753,7 +774,12 @@ defmodule Vigil.Store do
 
     {:ok, content} = File.read(Path.join(state.vault_path, rel_path))
 
-    meta = %{created_at: created_at, updated_at: commit_meta.updated_at, last_author: commit_meta.last_author}
+    meta = %{
+      created_at: created_at,
+      updated_at: commit_meta.updated_at,
+      last_author: commit_meta.last_author
+    }
+
     {:ok, file} = Parser.parse(rel_path, content, meta)
 
     remove_file_from_index(rel_path)
@@ -766,7 +792,9 @@ defmodule Vigil.Store do
         Enum.each(file.chunk_ids, fn cid ->
           case :ets.lookup(@chunks_table, cid) do
             [{_, rec}] ->
-              Enum.each(rec.links, fn target -> :ets.delete_object(@links_table, {target, cid}) end)
+              Enum.each(rec.links, fn target ->
+                :ets.delete_object(@links_table, {target, cid})
+              end)
 
             [] ->
               :ok
@@ -801,7 +829,9 @@ defmodule Vigil.Store do
 
     active =
       events
-      |> Enum.filter(fn e -> DateTime.compare(now, e.starts) != :lt and DateTime.compare(now, e.ends) != :gt end)
+      |> Enum.filter(fn e ->
+        DateTime.compare(now, e.starts) != :lt and DateTime.compare(now, e.ends) != :gt
+      end)
       |> Enum.sort_by(& &1.ends, DateTime)
       |> Enum.map(fn e ->
         %{id: e.path, title: e.title, ends_in: Vigil.TimeFmt.duration(DateTime.diff(e.ends, now))}
@@ -811,23 +841,37 @@ defmodule Vigil.Store do
 
     upcoming =
       events
-      |> Enum.filter(fn e -> DateTime.compare(e.starts, now) == :gt and DateTime.compare(e.starts, upcoming_cutoff) != :gt end)
+      |> Enum.filter(fn e ->
+        DateTime.compare(e.starts, now) == :gt and
+          DateTime.compare(e.starts, upcoming_cutoff) != :gt
+      end)
       |> Enum.sort_by(& &1.starts, DateTime)
       |> Enum.map(fn e ->
-        %{id: e.path, title: e.title, starts_in: Vigil.TimeFmt.duration(DateTime.diff(e.starts, now))}
+        %{
+          id: e.path,
+          title: e.title,
+          starts_in: Vigil.TimeFmt.duration(DateTime.diff(e.starts, now))
+        }
       end)
 
     past_cutoff = DateTime.add(now, -7 * 86_400, :second)
 
     recently_past =
       events
-      |> Enum.filter(fn e -> DateTime.compare(e.ends, now) == :lt and DateTime.compare(e.ends, past_cutoff) != :lt end)
+      |> Enum.filter(fn e ->
+        DateTime.compare(e.ends, now) == :lt and DateTime.compare(e.ends, past_cutoff) != :lt
+      end)
       |> Enum.sort_by(& &1.ends, {:desc, DateTime})
       |> Enum.map(fn e ->
         %{id: e.path, title: e.title, ended: Vigil.TimeFmt.ago(DateTime.diff(now, e.ends))}
       end)
 
-    %{now: DateTime.to_iso8601(now), active: active, upcoming: upcoming, recently_past: recently_past}
+    %{
+      now: DateTime.to_iso8601(now),
+      active: active,
+      upcoming: upcoming,
+      recently_past: recently_past
+    }
   end
 
   defp do_near_summary(now) do
@@ -851,11 +895,16 @@ defmodule Vigil.Store do
     upcoming =
       events
       |> Enum.filter(fn e ->
-        DateTime.compare(e.starts, now) == :gt and DateTime.compare(e.starts, horizon_cutoff) != :gt
+        DateTime.compare(e.starts, now) == :gt and
+          DateTime.compare(e.starts, horizon_cutoff) != :gt
       end)
       |> Enum.sort_by(& &1.starts, DateTime)
       |> Enum.map(fn e ->
-        %{id: e.path, title: e.title, starts_in: Vigil.TimeFmt.duration(DateTime.diff(e.starts, now))}
+        %{
+          id: e.path,
+          title: e.title,
+          starts_in: Vigil.TimeFmt.duration(DateTime.diff(e.starts, now))
+        }
       end)
 
     %{active: active, upcoming: upcoming}
@@ -865,7 +914,8 @@ defmodule Vigil.Store do
     :ets.tab2list(@files_table)
     |> Enum.map(fn {_path, file} -> file end)
     |> Enum.filter(fn f ->
-      f.type == :event and DateTime.compare(now, f.starts) != :lt and DateTime.compare(now, f.ends) != :gt
+      f.type == :event and DateTime.compare(now, f.starts) != :lt and
+        DateTime.compare(now, f.ends) != :gt
     end)
     |> Enum.map(& &1.path)
     |> MapSet.new()

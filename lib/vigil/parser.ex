@@ -78,8 +78,12 @@ defmodule Vigil.Parser do
 
         frontmatter =
           case YamlElixir.read_from_string(yaml_text) do
-            {:ok, map} when is_map(map) -> map
-            {:ok, _other} -> %{}
+            {:ok, map} when is_map(map) ->
+              map
+
+            {:ok, _other} ->
+              %{}
+
             {:error, reason} ->
               Logger.warning("unparsbares Frontmatter-YAML in #{path}: #{inspect(reason)}")
               %{}
@@ -115,9 +119,14 @@ defmodule Vigil.Parser do
 
     type =
       case raw_type do
-        "reference" -> :reference
-        "decision" -> :decision
-        "event" -> :event
+        "reference" ->
+          :reference
+
+        "decision" ->
+          :decision
+
+        "event" ->
+          :event
 
         nil ->
           Logger.warning("Fehlendes 'type' Feld in #{path}, behandle als reference")
@@ -224,7 +233,16 @@ defmodule Vigil.Parser do
             %{acc | current: %{acc.current | lines: [line | acc.current.lines]}}
 
           true ->
-            current = acc[:pre] || %{heading: nil, heading_path: [], heading_line: nil, body_start_line: line_no, lines: []}
+            current =
+              acc[:pre] ||
+                %{
+                  heading: nil,
+                  heading_path: [],
+                  heading_line: nil,
+                  body_start_line: line_no,
+                  lines: []
+                }
+
             %{acc | pre: %{current | lines: [line | current.lines]}}
         end
       end)
@@ -282,7 +300,15 @@ defmodule Vigil.Parser do
 
   defp build_pre_chunk(_path, nil, _type, _starts, _ends, _ca, _ua), do: nil
 
-  defp build_pre_chunk(path, %{lines: rev_lines, body_start_line: body_start}, type, starts, ends, created_at, updated_at) do
+  defp build_pre_chunk(
+         path,
+         %{lines: rev_lines, body_start_line: body_start},
+         type,
+         starts,
+         ends,
+         created_at,
+         updated_at
+       ) do
     body_lines = Enum.reverse(rev_lines)
     body = Enum.join(body_lines, "\n")
 

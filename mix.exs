@@ -15,7 +15,7 @@ defmodule Vigil.MixProject do
 
   def application do
     [
-      extra_applications: [:logger],
+      extra_applications: [:logger, :eex, :inets, :ssl],
       mod: {Vigil.Application, []}
     ]
   end

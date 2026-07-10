@@ -6,12 +6,20 @@ defmodule Vigil.GitTest do
   setup do
     vault = Vigil.FixtureVault.build(remote: true)
     {tmp, remote} = vault
-    on_exit(fn -> Vigil.FixtureVault.cleanup(tmp); File.rm_rf(remote) end)
+
+    on_exit(fn ->
+      Vigil.FixtureVault.cleanup(tmp)
+      File.rm_rf(remote)
+    end)
+
     {:ok, vault: tmp, remote: remote}
   end
 
-  test "log_metadata returns created_at/updated_at/last_author from a single git log call", %{vault: vault} do
+  test "log_metadata returns created_at/updated_at/last_author from a single git log call", %{
+    vault: vault
+  } do
     meta = Git.log_metadata(vault)
+
     assert %{created_at: %DateTime{}, updated_at: %DateTime{}, last_author: "Daniel"} =
              meta["bike/terra-speed.md"]
   end

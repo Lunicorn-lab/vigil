@@ -10,9 +10,10 @@ defmodule Vigil.StoreExcludeTest do
     %{vault: vault}
   end
 
-  test "VIGIL_EXCLUDE hides the folder from search, ETS, read, and create even though it exists on disk", %{
-    vault: vault
-  } do
+  test "VIGIL_EXCLUDE hides the folder from search, ETS, read, and create even though it exists on disk",
+       %{
+         vault: vault
+       } do
     assert File.exists?(Path.join(vault, "work/geheim.md"))
 
     assert Store.search(%{query: "exkludiertsuchwort"}) == []
